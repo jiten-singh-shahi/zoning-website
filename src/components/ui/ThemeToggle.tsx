@@ -1,10 +1,11 @@
 "use client";
 
 import * as React from "react";
-import { motion } from "framer-motion";
 import { Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
-import { Button } from "./Button";
+import { cn } from "@/lib/utils";
+
+type ThemeValue = "light" | "system" | "dark";
 
 export function ThemeToggle() {
   const { theme, setTheme } = useTheme();
@@ -14,53 +15,61 @@ export function ThemeToggle() {
     setMounted(true);
   }, []);
 
+  const currentTheme: ThemeValue = React.useMemo(() => {
+    if (!mounted) return "system";
+    if (theme === "light" || theme === "dark") return theme;
+    return "system";
+  }, [theme, mounted]);
+
   if (!mounted) {
     return (
-      <Button variant="ghost" size="sm" className="w-10 h-10 px-0 rounded-full">
-        <Sun className="h-5 w-5" />
-        <span className="sr-only">Toggle theme</span>
-      </Button>
+      <div
+        className="flex h-6 w-20 items-center rounded-full border border-border bg-muted/50 p-px"
+        aria-hidden
+      >
+        <div className="flex h-full flex-1 items-center justify-center rounded-full text-muted-foreground">
+          <Sun className="h-3 w-3" />
+        </div>
+        <div className="flex h-full flex-1 items-center justify-center rounded-full text-muted-foreground text-[10px] font-semibold">
+          A
+        </div>
+        <div className="flex h-full flex-1 items-center justify-center rounded-full text-muted-foreground">
+          <Moon className="h-3 w-3" />
+        </div>
+      </div>
     );
   }
 
-  const isDark = theme === "dark";
+  const options: { value: ThemeValue; icon: React.ReactNode; label: string }[] = [
+    { value: "light", icon: <Sun className="h-3 w-3" />, label: "Light" },
+    { value: "system", icon: <span className="text-[10px] font-semibold">A</span>, label: "Auto (system)" },
+    { value: "dark", icon: <Moon className="h-3 w-3" />, label: "Dark" },
+  ];
 
   return (
-    <motion.div
-      whileHover={{ scale: 1.05 }}
-      whileTap={{ scale: 0.95 }}
+    <div
+      role="group"
+      aria-label="Theme selection"
+      className="flex h-6 w-20 items-center rounded-full border border-border bg-muted/50 p-px shadow-sm"
     >
-      <Button
-        variant="ghost"
-        size="sm"
-        className="w-10 h-10 px-0 rounded-full relative overflow-hidden hover:bg-accent/50 transition-colors"
-        onClick={() => setTheme(isDark ? "light" : "dark")}
-        aria-label="Toggle theme"
-      >
-        <motion.div
-          initial={false}
-          animate={{
-            rotate: isDark ? 0 : 180,
-            scale: isDark ? 1 : 0,
-          }}
-          transition={{ duration: 0.3, ease: "easeInOut" }}
-          className="absolute inset-0 flex items-center justify-center"
+      {options.map(({ value, icon, label }) => (
+        <button
+          key={value}
+          type="button"
+          onClick={() => setTheme(value)}
+          aria-pressed={currentTheme === value}
+          aria-label={label}
+          title={label}
+          className={cn(
+            "flex h-full flex-1 items-center justify-center rounded-full text-muted-foreground transition-all duration-200",
+            "hover:bg-muted hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+            currentTheme === value &&
+              "bg-background text-foreground shadow-sm ring-1 ring-border"
+          )}
         >
-          <Moon className="h-5 w-5 text-primary" />
-        </motion.div>
-        <motion.div
-          initial={false}
-          animate={{
-            rotate: isDark ? -180 : 0,
-            scale: isDark ? 0 : 1,
-          }}
-          transition={{ duration: 0.3, ease: "easeInOut" }}
-          className="absolute inset-0 flex items-center justify-center"
-        >
-          <Sun className="h-5 w-5 text-primary" />
-        </motion.div>
-        <span className="sr-only">Toggle theme</span>
-      </Button>
-    </motion.div>
+          {icon}
+        </button>
+      ))}
+    </div>
   );
 }
